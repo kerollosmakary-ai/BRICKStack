@@ -1,219 +1,138 @@
-# 🧱 Telegram Local AI Agent Bot
+# 🧱 LiteLLM Telegram Agent Bot
 
-**Run a multi-agent AI coding assistant entirely on your Android phone.**
-
-No cloud. No API keys. No data leaves your device. Works offline after setup.
+**Multi-provider AI coding assistant on Telegram.** Use DeepSeek, Qwen, OpenAI, Anthropic, Groq, or local models — all from one bot.
 
 ---
 
-## 📱 What You Get
+## 🌟 What Makes This Different
 
-A Telegram bot that runs on your phone (via Termux) with these AI agents:
-
-| Agent | Icon | What It Does |
-|-------|------|-------------|
-| **Code** | 🧠 | Writes clean, efficient code with type hints |
-| **Review** | 🔍 | Finds bugs, security issues, performance problems |
-| **Explain** | 📖 | Breaks down code like a patient teacher |
-| **Plan** | 📋 | Breaks tasks into actionable steps |
-| **Debug** | 🐛 | Fixes errors and explains root causes |
-| **Pipeline** | 🔄 | Runs all 4 agents in sequence on one task |
-
-**Example:**
-```
-You (Pipeline mode): "Build a todo API in Flask"
-
-Bot → 📋 Planner: Breaks it into 6 steps
-Bot → 💻 Coder: Writes complete Flask API code
-Bot → 🔍 Reviewer: Checks for SQL injection, missing auth
-Bot → ✅ Summary: Stats + confirmation
-```
-
-All of this happens on your phone using a 3B parameter model.
+| Feature | Traditional Bot | This Bot |
+|---------|----------------|----------|
+| **Provider** | One hardcoded | **100+ via LiteLLM** |
+| **Switching** | Restart code | **In-chat `/model` command** |
+| **Offline** | Not possible | **Local Ollama mode** |
+| **Fallback** | Manual | **Auto-retry + fallback** |
+| **New provider** | Rebuild bot | **Add alias to config** |
 
 ---
 
-## 🚀 Requirements
+## 🚀 Supported Providers
 
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| **RAM** | 6 GB | 8+ GB |
-| **Storage** | 4 GB free | 8 GB free |
-| **OS** | Android 10+ | Android 12+ |
-| **App** | Termux (F-Droid) | Termux + Termux:Boot |
-| **Internet** | For setup only | For setup + model download |
-
-> **Why 3B model?** A 3B parameter model uses ~2.2GB RAM (Q4_K_M quantized). On an 8GB phone, this leaves ~3GB for Android OS and apps — safe and stable. A 7B model would use ~4.5GB and likely cause crashes.
+| Alias | Provider | Speed | Cost | Needs Key |
+|-------|----------|-------|------|-----------|
+| `deepseek` | DeepSeek (China) | Fast | $ | ✅ |
+| `local` | Ollama (your phone) | Medium | Free | ❌ |
+| `qwen` | Qwen 32B (Alibaba) | Fast | $ | ✅ |
+| `gpt-4o` | OpenAI GPT-4o | Fast | $$ | ✅ |
+| `gpt-4o-mini` | OpenAI (cheaper) | Fast | $ | ✅ |
+| `claude` | Anthropic Claude 3.5 | Fast | $$ | ✅ |
+| `gemini` | Google Gemini Pro | Fast | $ | ✅ |
+| `groq-llama` | Groq (Llama 3.1 70B) | Very Fast | Free | ✅ |
+| `groq-mixtral` | Groq (Mixtral 8x7B) | Very Fast | Free | ✅ |
 
 ---
 
-## 📦 Installation (One Command)
+## 📦 Installation (2 Minutes)
 
+### 1. Install Termux
+- Download from [F-Droid](https://f-droid.org/packages/com.termux/)
+- **NOT** Google Play (outdated)
+
+### 2. One-Command Install
 ```bash
-# 1. Install Termux from F-Droid (NOT Google Play)
-#    https://f-droid.org/packages/com.termux/
-
-# 2. In Termux, run:
 termux-setup-storage
 pkg update && pkg install -y git curl
 
-# 3. Clone this repo
 cd ~ && git clone https://github.com/kerollosmakary-ai/BRICKStack.git
-
-# 4. Run the installer
 cd BRICKStack/telegram_agent
 bash install.sh
-
-# 5. Follow the interactive prompts
-#    (takes 10-15 minutes to download and compile)
 ```
 
----
-
-## ⚙️ Configuration
-
-### 1. Get Your Bot Token
-
-1. Open Telegram → Search `@BotFather`
-2. Type `/newbot`
-3. Name it (e.g., `MyLocalAI_Bot`)
-4. Copy the token: `123456789:ABCdefGHIjkl...`
-
-### 2. Get Your Admin ID
-
-1. Search `@userinfobot` on Telegram
-2. It replies with your ID: `123456789`
-3. Copy this number
-
-### 3. Set Environment
-
+### 3. Configure
 ```bash
-# Edit the env file
 nano ~/telegram_agent/env.sh
 
-# Replace:
-export TELEGRAM_BOT_TOKEN="123456789:YOUR_TOKEN_HERE"
+# Set these:
+export TELEGRAM_BOT_TOKEN="123456789:YOUR_TOKEN_FROM_BOTFATHER"
 export ADMIN_ID="123456789"
+export LLM_MODEL="deepseek"  # or 'local', 'qwen', 'gpt-4o', etc.
 
-# Save and exit (Ctrl+X, Y, Enter)
-# Activate:
-source ~/telegram_agent/env.sh
+# Set API key for your chosen provider:
+export DEEPSEEK_API_KEY="sk-..."
+# export OPENAI_API_KEY="sk-..."
+# export QWEN_API_KEY="sk-..."
 ```
 
-> **Tip:** Add `source ~/telegram_agent/env.sh` to your `~/.bashrc` so it's always set.
+### 4. Start
+```bash
+source ~/telegram_agent/env.sh
+~/telegram_agent/start.sh
+```
 
 ---
 
-## 🎮 Start Using
+## 🎮 Usage in Telegram
 
-### Start Everything
+### Agent Modes
 
-```bash
-# One command:
-~/telegram_agent/start.sh
+| Button | What It Does |
+|--------|-------------|
+| 🧠 **Code** | Writes code, includes type hints + error handling |
+| 🔍 **Review** | Finds bugs, security issues, performance problems |
+| 📖 **Explain** | Breaks down code like a patient teacher |
+| 📋 **Plan** | Breaks tasks into numbered steps with complexity |
+| 🐛 **Debug** | Fixes errors + adds test cases |
+| 🔄 **Pipeline** | Runs all 4 agents in sequence |
 
-# This will:
-# 1. Check if LLM server is running (start if not)
-# 2. Start the Telegram bot
-# 3. Keep running in foreground
+### Switch Models (In-Chat)
+
+Send these commands to your bot:
+
+```
+/model              → Show model picker
+/model deepseek     → Switch to DeepSeek
+/model local        → Switch to local Ollama (offline)
+/model qwen         → Switch to Qwen 32B
+/model gpt-4o       → Switch to OpenAI GPT-4o
+/model claude       → Switch to Anthropic Claude
+/model gemini       → Switch to Google Gemini
+/model groq-llama   → Switch to Groq (fast, free)
 ```
 
-### Use in Telegram
+### Example Conversations
 
-1. Open Telegram
-2. Search your bot's name (from @BotFather)
-3. Tap `/start`
-4. Choose an agent mode or type directly
-
-**Example conversation:**
+**Coding:**
 ```
 You: 🧠 Code mode
-You: Write a Python function to sort files by size
+You: Write a JWT auth middleware in FastAPI
 
 Bot: ```python
-def sort_files_by_size(directory):
-    from pathlib import Path
-    return sorted(
-        Path(directory).iterdir(),
-        key=lambda p: p.stat().st_size,
-        reverse=True
-    )
+async def jwt_middleware(request: Request, call_next):
+    token = request.headers.get("Authorization")
+    ...
 ```
 ```
 
-### Pipeline Mode (Multi-Agent)
-
+**Pipeline (Multi-Agent):**
 ```
 You: 🔄 Pipeline mode
-You: Build a login system with JWT tokens
+You: Build a URL shortener API
 
-Bot [Planner]: 📋 1. Create user model 2. Add bcrypt hashing 3. JWT middleware...
-Bot [Coder]: 💻 (complete Flask code)
-Bot [Reviewer]: 🔍 Missing rate limiting, weak password policy...
-Bot [Summary]: ✅ 4 agents, 12KB output, 15 seconds
+Bot [Planner]: 📋 1. Design schema 2. Create endpoints 3. Add caching...
+Bot [Coder]: 💻 (complete FastAPI code)
+Bot [Reviewer]: 🔍 Missing rate limiting, consider Redis...
+Bot [Summary]: ✅ 4 agents, 15KB output, model: deepseek
 ```
 
----
-
-## 🛑 Stop / Manage
-
-| Action | Command |
-|--------|---------|
-| Stop everything | `~/telegram_agent/stop.sh` |
-| Check status | `~/telegram_agent/status.sh` |
-| Stop LLM from Telegram | Send `/stop_llm` to bot (admin) |
-| Start LLM from Telegram | Send `/start_llm` to bot (admin) |
-| Check RAM from Telegram | Send `/status` to bot |
-
-**RAM Management is critical on 8GB phones:**
-- The LLM server uses ~2.2GB RAM
-- When you're not coding, send `/stop_llm` to free memory
-- Your bot conversations and history are preserved
-- Send `/start_llm` when ready to code again
-
----
-
-## 📁 File Structure
-
+**Switching:**
 ```
-~/telegram_agent/
-├── bot.py              # Main bot (do not edit)
-├── start.sh            # Start script
-├── stop.sh             # Stop script
-├── status.sh           # Status checker
-├── env.sh              # Your config (edit this)
-└── README.md           # This file
+You: /model groq-llama
+Bot: ✅ Model switched to groq/llama-3.1-70b-versatile
+     Provider: GROQ
+     Has Key: ✅
 
-~/models/
-└── qwen2.5-coder-3b.q4_k_m.gguf   # 3B model (2.5GB)
-
-~/llama.cpp/
-├── build/
-│   └── bin/
-│       └── llama-server             # LLM inference engine
-└── ...
-```
-
----
-
-## 🔧 Manual Start (Advanced)
-
-If you want to run components separately:
-
-**Terminal 1 — LLM Server:**
-```bash
-~/llama.cpp/build/bin/llama-server \
-    -m ~/models/qwen2.5-coder-3b.q4_k_m.gguf \
-    -c 4096 \
-    --port 8080 \
-    -n 512
-```
-
-**Terminal 2 — Bot:**
-```bash
-source ~/telegram_agent/env.sh
-cd ~/telegram_agent
-python3 bot.py
+You: Write a Python script to parse JSON
+Bot: (fast response from Groq)
 ```
 
 ---
@@ -221,98 +140,139 @@ python3 bot.py
 ## 🔌 Architecture
 
 ```
-┌──────────────────────────────────────┐
-│           Your Android Phone          │
-│  ┌──────────┐      ┌──────────────┐  │
-│  │ Telegram │──────▶│  llama.cpp  │  │
-│  │   Bot    │◀──────│  (Qwen 3B)  │  │
-│  │  (Python)│      │  localhost  │  │
-│  └──────────┘      └──────────────┘  │
-│         │                            │
-│  ┌──────┴────────┐                   │
-│  │  Agent Scripts │                   │
-│  │  • Planner     │                   │
-│  │  • Coder       │                   │
-│  │  • Reviewer    │                   │
-│  │  • Writer      │                   │
-│  └────────────────┘                   │
-└──────────────────────────────────────┘
-
-Internet: Only for Telegram messages
-AI Processing: 100% local on your phone
+┌──────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│   Telegram   │────▶│   LiteLLM Client │────▶│   DeepSeek API   │
+│   (Your Bot) │     │   (Unified)      │     │   (or any)       │
+└──────────────┘     └──────────────────┘     └──────────────────┘
+                            │
+                            ├──▶ OpenAI API
+                            ├──▶ Qwen API
+                            ├──▶ Anthropic API
+                            ├──▶ Groq API
+                            ├──▶ Google Gemini
+                            └──▶ Local Ollama ←──┐
+                                                  │
+                                        ┌────────┴────────┐
+                                        │  Your Phone     │
+                                        │  (Offline Mode) │
+                                        └─────────────────┘
 ```
 
----
-
-## ⚡ Performance
-
-| Metric | Value |
-|--------|-------|
-| Model Size | 3 billion parameters |
-| Quantization | Q4_K_M (4-bit) |
-| Model File | ~2.5 GB |
-| RAM Usage | ~2.2 GB when active |
-| Inference Speed | 8-15 tokens/second (ARM CPU) |
-| Time for 500 tokens | ~30-60 seconds |
-| Quality | Good for code, logic, debugging |
-| Offline | ✅ Fully offline after setup |
-
-> **Note:** This is a 3B model. It won't match GPT-4 or Claude, but it's excellent for coding tasks, explanations, and debugging — especially for its size.
+**The bot is just a thin Telegram wrapper around a unified LiteLLM client.**
 
 ---
 
-## 🛡️ Privacy & Security
+## 🔧 Offline Mode (100% Local)
+
+### 1. Install Ollama
+```bash
+pkg install ollama 2>/dev/null || \
+  curl -fsSL https://ollama.com/install.sh | sh
+```
+
+### 2. Pull a Model
+```bash
+# Small model for phones (2-3GB RAM)
+ollama pull qwen2.5-coder:3b
+
+# Or slightly larger (4-5GB RAM)
+ollama pull qwen2.5-coder:7b
+```
+
+### 3. Start Ollama
+```bash
+ollama serve &
+```
+
+### 4. Configure Bot
+```bash
+export LLM_MODEL="local"
+# No API key needed!
+```
+
+### 5. Start Bot
+```bash
+~/telegram_agent/start.sh
+```
+
+**Result:** All AI processing happens on your phone. Zero internet needed for inference. Only Telegram messages travel (encrypted).
+
+---
+
+## 📱 RAM Usage by Provider
+
+| Provider | RAM Usage | Notes |
+|----------|-----------|-------|
+| **Cloud (DeepSeek, OpenAI, etc.)** | ~100 MB | Just the bot script |
+| **Local Ollama (3B model)** | ~2.5 GB | Bot + LLM |
+| **Local Ollama (7B model)** | ~4.5 GB | Bot + LLM (risky on 8GB) |
+
+**Recommendation:**
+- 8GB RAM → Use cloud providers or 3B local model
+- 12GB+ RAM → Can use 7B local model comfortably
+- Always close other apps when using local mode
+
+---
+
+## 🛡️ Security & Privacy
 
 | Feature | Status |
 |---------|--------|
-| Data leaves device | ❌ No |
-| Requires internet for AI | ❌ No (after setup) |
-| Requires Telegram API | ✅ Only for bot messages |
-| Code stored on phone | ✅ Only in RAM (no persistence) |
-| Conversation history | ✅ Per session (not saved to disk) |
-| Admin commands | ✅ Protected by Telegram ID check |
+| Data leaves device (cloud) | Only via API call to your chosen provider |
+| Data leaves device (local) | ❌ No — 100% offline |
+| API key stored | ❌ Not stored — read from env each time |
+| Conversation history | ✅ Per session only (not saved) |
+| Admin commands | ✅ Protected by Telegram ID |
+| Telegram encryption | ✅ End-to-end |
 
 ---
 
 ## 🐛 Troubleshooting
 
-### "Cannot connect to LLM server"
+### "No API key found"
 ```bash
-# Check if server is running
-~/telegram_agent/status.sh
-
-# If stopped, start it:
-~/telegram_agent/start.sh
-
-# Or from Telegram, send /start_llm (admin only)
+# Set the right key for your model
+export DEEPSEEK_API_KEY="sk-..."
+export OPENAI_API_KEY="sk-..."
+# etc.
 ```
 
-### "Out of memory" / Phone crashes
+### "Model switched but no response"
 ```bash
-# The 3B model should fit, but if not:
-# 1. Close other apps
-# 2. Use /stop_llm in Telegram when not coding
-# 3. Consider a smaller model (1.5B) — edit env.sh
+# Check if provider is accessible
+python3 -c "import httpx; httpx.get('https://api.deepseek.com').raise_for_status()"
+# Check your API key is valid
 ```
 
-### "Model download failed"
+### "Local model not responding"
 ```bash
-# Manual download:
-cd ~/models
-wget https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/resolve/main/qwen2.5-coder-3b-instruct-q4_k_m.gguf
+# Check Ollama is running
+curl http://localhost:11434
 
-# If huggingface is blocked, use:
-# wget https://hf-mirror.com/... (same path)
+# Pull model if not present
+ollama pull qwen2.5-coder:3b
 ```
 
-### "Bot doesn't respond"
+### "Out of memory (local mode)"
 ```bash
-# Check if bot is running
-pgrep -f "python3 bot.py"
-
-# If not, restart
-~/telegram_agent/start.sh
+# Switch to a smaller model
+ollama pull qwen2.5-coder:1.5b
+# Or switch to cloud mode
+# /model deepseek in Telegram
 ```
+
+---
+
+## 📝 Commands Reference
+
+| Command | What It Does |
+|---------|-------------|
+| `/start` | Show main menu with agent buttons |
+| `/model` | Show model picker or switch model |
+| `/status` | Show current model, provider, key status |
+| `/history` | Show last 6 conversation turns |
+| `/clear` | Clear conversation history |
+| `/help` | Show this help |
 
 ---
 
@@ -320,29 +280,72 @@ pgrep -f "python3 bot.py"
 
 ```bash
 # Install Termux:Boot from F-Droid
-# https://f-droid.org/packages/com.termux.boot/
-
 mkdir -p ~/.termux/boot
-ln -s ~/telegram_agent/start.sh ~/.termux/boot/
 
-# Reboot your phone
-# Bot will auto-start on boot
+# Create startup script
+cat > ~/.termux/boot/start-bot.sh << 'EOF'
+#!/data/data/com.termux/files/usr/bin/sh
+termux-wake-lock
+source ~/telegram_agent/env.sh
+~/telegram_agent/start.sh
+EOF
+
+chmod +x ~/.termux/boot/start-bot.sh
+# Reboot phone — bot starts automatically
 ```
 
 ---
 
-## 📝 License
+## 🧪 Advanced: Custom Model Aliases
 
-Same as BRICKStack — MIT License.
+Edit `orchestrator/litellm_client.py` in the BRICKStack repo to add your own aliases:
+
+```python
+MODEL_ALIASES = {
+    "my-custom": "ollama/my-custom-model",
+    "azure-gpt": "azure/gpt-4",
+    "cohere": "cohere/command-r",
+    # ... add your own
+}
+```
+
+Then use: `/model my-custom` in Telegram.
+
+---
+
+## 💡 Provider Tips
+
+| Provider | Best For | Speed | Cost |
+|----------|----------|-------|------|
+| **DeepSeek** | Coding, reasoning | Fast | Very cheap |
+| **Qwen** | Chinese + code | Fast | Cheap |
+| **OpenAI** | General tasks | Fast | Expensive |
+| **Claude** | Long documents, analysis | Fast | Expensive |
+| **Groq** | Real-time, fast inference | Very fast | Free tier |
+| **Gemini** | Multimodal, Google ecosystem | Fast | Cheap |
+| **Local** | Privacy, offline, no cost | Medium | Free |
+
+---
+
+## 📊 Comparison with Other Bots
+
+| Bot | Multi-Provider | Offline | Local Mode | Agent Pipeline | Cost |
+|-----|---------------|---------|------------|---------------|------|
+| ChatGPT | ❌ | ❌ | ❌ | ❌ | $$ |
+| Claude | ❌ | ❌ | ❌ | ❌ | $$ |
+| GitHub Copilot | ❌ | ❌ | ❌ | ❌ | $$ |
+| LocalAI (generic) | ❌ | ✅ | ✅ | ❌ | Free |
+| **This Bot** | ✅ **100+** | ✅ | ✅ | ✅ | **Free-$** |
 
 ---
 
 ## 🙏 Credits
 
-- [llama.cpp](https://github.com/ggerganov/llama.cpp) — Fast local LLM inference
-- [Qwen2.5-Coder](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct) — Coding model by Alibaba
+- [LiteLLM](https://github.com/BerriAI/litellm) — Unified LLM interface
 - [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) — Telegram integration
+- [Ollama](https://ollama.com/) — Local LLM inference
+- [BRICKStack](https://github.com/kerollosmakary-ai/BRICKStack) — Core platform
 
 ---
 
-**Made for developers who want AI coding assistance without the cloud.**
+**One bot, 100+ models, your choice of provider.**
