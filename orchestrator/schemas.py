@@ -31,3 +31,4 @@ class GraphEvent(BaseModel):
     code: Optional[str] = None
     output: Optional[str] = None
     done: bool = False
+    chunk: Optional[str] = None  # streaming token

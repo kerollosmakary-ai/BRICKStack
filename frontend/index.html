@@ -1,70 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRICKStack Studio</title>
-<meta name="theme-color" content="#161b22">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BRICKStack</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div id="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+          <span class="logo-text">BRICKStack</span>
+        </div>
+        <button id="toggle-sidebar" class="icon-btn" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3>Workspace</h3>
+          <div id="file-tree" class="file-tree">
+            <div class="empty-state">No files</div>
+          </div>
+        </div>
+        <div class="nav-section">
+          <h3>Pipeline</h3>
+          <div class="agent-list">
+            <div class="agent-item" data-agent="planner">
+              <span class="agent-dot planner"></span>
+              <span class="agent-name">Planner</span>
+              <span class="agent-status" id="status-planner">idle</span>
+            </div>
+            <div class="agent-item" data-agent="coder">
+              <span class="agent-dot coder"></span>
+              <span class="agent-name">Coder</span>
+              <span class="agent-status" id="status-coder">idle</span>
+            </div>
+            <div class="agent-item" data-agent="terminal">
+              <span class="agent-dot terminal"></span>
+              <span class="agent-name">Terminal</span>
+              <span class="agent-status" id="status-terminal">idle</span>
+            </div>
+            <div class="agent-item" data-agent="reviewer">
+              <span class="agent-dot reviewer"></span>
+              <span class="agent-name">Reviewer</span>
+              <span class="agent-status" id="status-reviewer">idle</span>
+            </div>
+            <div class="agent-item" data-agent="writer">
+              <span class="agent-dot writer"></span>
+              <span class="agent-name">Writer</span>
+              <span class="agent-status" id="status-writer">idle</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="connection-status" id="connection-status">
+          <span class="status-dot offline"></span>
+          <span class="status-label">Disconnected</span>
+        </div>
+      </div>
+    </aside>
 
-<!-- ☰ Sidebar -->
-<div id="sidebar" class="sidebar">
-  <div class="sidebar-header">
-    <span>📁 Workspace</span>
-    <button onclick="toggleSidebar()" class="icon-btn">&times;</button>
+    <main class="main">
+      <header class="header">
+        <button id="menu-toggle" class="menu-btn" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+        <h1>New Chat</h1>
+        <div class="header-actions">
+          <button id="clear-chat" class="btn-icon" title="Clear chat" aria-label="Clear chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+          <button id="new-chat" class="btn-primary">New Chat</button>
+        </div>
+      </header>
+
+      <div id="chat-container" class="chat-container">
+        <div id="messages" class="messages">
+          <div class="welcome">
+            <div class="welcome-logo">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <rect x="6" y="6" width="36" height="36" rx="4"/>
+                <path d="M6 18h36M18 42V18"/>
+              </svg>
+            </div>
+            <h2>BRICKStack</h2>
+            <p>AI-powered coding pipeline. Write, execute, and review code.</p>
+            <div class="suggestions">
+              <button class="suggestion" data-prompt="Write a Python function to reverse a string">
+                <span class="suggestion-label">Reverse a string</span>
+                <span class="suggestion-desc">Python function</span>
+              </button>
+              <button class="suggestion" data-prompt="Build a CLI calculator with add, subtract, multiply, divide">
+                <span class="suggestion-label">CLI Calculator</span>
+                <span class="suggestion-desc">Python script</span>
+              </button>
+              <button class="suggestion" data-prompt="Create a Flask API with CRUD endpoints for a todo list">
+                <span class="suggestion-label">Flask API</span>
+                <span class="suggestion-desc">REST endpoints</span>
+              </button>
+              <button class="suggestion" data-prompt="Write a web scraper using requests and BeautifulSoup">
+                <span class="suggestion-label">Web Scraper</span>
+                <span class="suggestion-desc">Data extraction</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea 
+            id="chat-input" 
+            placeholder="Ask me to write code, analyze data, or solve a problem..."
+            rows="1"
+            aria-label="Message input"
+          ></textarea>
+          <button id="send-btn" class="send-btn" disabled aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+        <div class="input-hint">Press Enter to send, Shift+Enter for new line</div>
+      </div>
+    </main>
   </div>
-  <div id="file-tree" class="file-tree">
-    <div class="tree-item folder">📁 project/</div>
-    <div class="tree-item file" style="padding-left:24px">📄 main.py</div>
-    <div class="tree-item file" style="padding-left:24px">📄 requirements.txt</div>
-    <div class="tree-item folder">📁 src/</div>
-    <div class="tree-item file" style="padding-left:24px">📄 app.js</div>
-  </div>
-</div>
 
-<!-- Main -->
-<div id="main">
-  <!-- Top bar -->
-  <div id="topbar">
-    <button onclick="toggleSidebar()" class="icon-btn">☰</button>
-    <span id="status-badge" class="badge badge-ready">🟢 Ready</span>
-    <span id="session-id">Session: abc123</span>
-    <button onclick="showThoughts=!showThoughts;renderThoughts()" class="btn-sm">🧠 Thoughts</button>
-  </div>
-
-  <!-- Chat area -->
-  <div id="chat" class="chat"></div>
-
-  <!-- Composer -->
-  <div id="composer">
-    <div id="toolbar" class="toolbar">
-      <button onclick="wrapSelection('**')" title="Bold"><b>B</b></button>
-      <button onclick="wrapSelection('`','`')" title="Code">`</button>
-      <button onclick="wrapSelection('```\n','\n```')" title="Code block">{ }</button>
-      <span class="sep"></span>
-      <button onclick="insertAtCursor('- ')" title="List">☰</button>
-      <button onclick="insertAtCursor('# ')" title="Heading">H</button>
-      <span class="sep"></span>
-      <span id="agent-indicator">🧠 Architect · Coder · Terminal</span>
-    </div>
-    <div id="input-row">
-      <textarea id="input" rows="3" placeholder="Ask anything... (Shift+Enter = send)"></textarea>
-      <button id="send-btn" onclick="sendMessage()">▶</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

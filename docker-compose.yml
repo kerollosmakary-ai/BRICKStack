@@ -1,0 +1,114 @@
+version: "3.8"
+
+services:
+  # ── PostgreSQL Database ───────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-brickstack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brickstack_pass_123}
+      POSTGRES_DB: ${POSTGRES_DB:-brickstack}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-brickstack} -d ${POSTGRES_DB:-brickstack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - brickstack
+
+  # ── Redis Cache ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - brickstack
+
+  # ── Backend API ───────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-brickstack}:${POSTGRES_PASSWORD:-brickstack_pass_123}@postgres/${POSTGRES_DB:-brickstack}
+      - REDIS_URL=redis://redis:6379/0
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - JWT_SECRET=${JWT_SECRET:-change_me_in_production}
+      - WS_REQUIRE_AUTH=false
+      - CORS_ORIGINS=*
+      - SANDBOX_MODE=local
+      - ENV=production
+    volumes:
+      - ./backend:/app/backend:ro
+      - ./orchestrator:/app/orchestrator:ro
+      - ./storage:/app/storage:ro
+      - ./frontend:/app/frontend:ro
+      - sandbox_workspace:/tmp/brickstack_workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - brickstack
+
+  # ── Nginx + Frontend ─────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./deploy/nginx.simple.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - brickstack
+
+  # ── Telegram Bot (optional) ──────────────────────────────
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    command: python3 telegram_bot.py
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BRICKSTACK_WS_URL=ws://backend:8000/ws
+    depends_on:
+      - backend
+    networks:
+      - brickstack
+    profiles:
+      - telegram
+
+volumes:
+  postgres_data:
+  redis_data:
+  sandbox_workspace:
+
+networks:
+  brickstack:
+    driver: bridge

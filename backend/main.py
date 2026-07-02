@@ -1,103 +1,125 @@
-"""
-BRICKStack Studio — Multi-Agent AI Coding Platform
-FastAPI Gateway + WebSocket + LangGraph Orchestrator + Docker Sandbox
-"""
-import os, uuid, json, asyncio, logging
-from datetime import datetime
+import os, sys, json, asyncio, traceback
+from pathlib import Path
+
+# Load .env manually (no python-dotenv dependency)
+env_path = Path(__file__).resolve().parent.parent / ".env"
+if env_path.exists():
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                os.environ.setdefault(key.strip(), val.strip().strip(chr(39)+chr(34)))
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+# ── imports ────────────────────────────────────────────────
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from orchestrator.schemas import GraphEvent
+from orchestrator.llm import LLMClient
+from orchestrator.graph import run_graph, run_edit
+from storage.db import init_db, get_db
 
-from auth import create_session, validate_session, rate_limit
-from orchestrator.graph import AgentGraph
-from storage.db import get_db, init_db
-from storage.models import MessageModel
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("brickstack")
-
-# ── State ──
-active_sessions: dict[str, dict] = {}  # session_id → {ws, graph, state}
+DB_INITIALIZED = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
-    log.info("DB initialized")
+    global DB_INITIALIZED
+    if not DB_INITIALIZED:
+        init_db()
+        DB_INITIALIZED = True
     yield
-    log.info("Shutdown")
 
-app = FastAPI(title="BRICKStack Studio", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app = FastAPI(lifespan=lifespan, title="BRICKStack Backend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# ── REST Endpoints ──
-
-@app.get("/health")
+# ── health ───────────────────────────────────────────────────
+@app.get("/api/health")
 async def health():
-    return {"status": "ok", "agents": 5, "sessions": len(active_sessions)}
+    return {"status": "ok", "llm_ready": bool(LLMClient().api_key)}
 
-@app.post("/sessions")
-async def create_session_endpoint():
-    session_id = create_session()
-    return {"session_id": session_id}
+# ── file tree ────────────────────────────────────────────────
+@app.get("/api/files")
+async def list_files():
+    workspace = "/tmp/brickstack_workspace"
+    os.makedirs(workspace, exist_ok=True)
+    files = []
+    for root, dirs, filenames in os.walk(workspace):
+        for f in filenames:
+            files.append(os.path.relpath(os.path.join(root, f), workspace))
+    return {"files": files, "workspace": workspace}
 
-# ── WebSocket — Main Event Loop ──
-
+# ── websocket ────────────────────────────────────────────────
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket):
-    await ws.accept()
-    session_id = str(uuid.uuid4())
-    active_sessions[session_id] = {"ws": ws, "graph": AgentGraph(session_id)}
-    log.info(f"WS connected: {session_id}")
-
+async def ws(websocket: WebSocket):
+    await websocket.accept()
     try:
-        # Send session welcome
-        await ws.send_json({"type": "system", "content": f"Session {session_id[:8]}... ready. 5 agents online."})
-
         while True:
-            raw = await ws.receive_text()
-            data = json.loads(raw)
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "content": "Invalid JSON"})
+                continue
+
+            if data.get("type") == "list_files":
+                workspace = "/tmp/brickstack_workspace"
+                os.makedirs(workspace, exist_ok=True)
+                files = []
+                for root, dirs, filenames in os.walk(workspace):
+                    for f in filenames:
+                        files.append(os.path.relpath(os.path.join(root, f), workspace))
+                await websocket.send_json({"type": "file_tree", "files": files, "task_id": data.get("task_id", "system")})
+                continue
 
             if data.get("type") == "user_message":
-                content = data.get("content", "").strip()
-                if not content:
-                    continue
+                state = {
+                    "task_id": data.get("task_id", "task-" + str(asyncio.get_event_loop().time())),
+                    "prompt": data.get("content", ""),
+                    "session_context": data.get("session_context", {}),
+                    "user_id": data.get("user_id", "anonymous"),
+                }
+                async for event in run_graph(state):
+                    await websocket.send_json(event.model_dump())
+                await websocket.send_json({"type": "done", "task_id": state["task_id"]})
+                continue
 
-                await ws.send_json({"type": "user_message", "content": content})
+            if data.get("type") == "edit_code":
+                state = {
+                    "task_id": data.get("task_id", "task-" + str(asyncio.get_event_loop().time())),
+                    "prompt": data.get("content", ""),
+                    "code": data.get("code", ""),
+                    "session_context": {},
+                    "user_id": data.get("user_id", "anonymous"),
+                }
+                updated_code = data.get("code", "")
+                async for event in run_edit(state, updated_code):
+                    await websocket.send_json(event.model_dump())
+                await websocket.send_json({"type": "done", "task_id": state["task_id"]})
+                continue
 
-                # ── Run through agent graph ──
-                session = active_sessions[session_id]
-                graph = session["graph"]
-
-                async for event in graph.run(content):
-                    await ws.send_json(event)
-
-                # Save to DB
-                await MessageModel.create(session_id, "user", content)
-                await MessageModel.create(session_id, "assistant", graph.get_last_output())
-
-            elif data.get("type") == "edit_code":
-                block_id = data.get("block_id")
-                new_source = data.get("new_source", "")
-                auto_run = data.get("auto_run", True)
-                log.info(f"Edit block {block_id}: re-running...")
-                if auto_run:
-                    session = active_sessions[session_id]
-                    async for event in session["graph"].rerun_code(new_source):
-                        await ws.send_json(event)
-
-            elif data.get("type") == "ping":
-                await ws.send_json({"type": "pong"})
+            await websocket.send_json({"type": "error", "content": "Unknown message type"})
 
     except WebSocketDisconnect:
-        log.info(f"WS disconnected: {session_id}")
+        pass
     except Exception as e:
-        log.error(f"WS error {session_id}: {e}")
-    finally:
-        active_sessions.pop(session_id, None)
+        await websocket.send_json({"type": "error", "content": str(e)})
 
-# ── Run ──
+# ── static frontend ──────────────────────────────────────────
+if os.path.exists("frontend/build"):
+    app.mount("/", StaticFiles(directory="frontend/build", html=True), name="static")
+elif os.path.exists("frontend/index.html"):
+    app.mount("/", StaticFiles(directory="frontend", html=True), name="static")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
