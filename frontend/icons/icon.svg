@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#161b22"/>
+  <rect x="64" y="64" width="384" height="384" rx="32" fill="#0d1117"/>
+  <text x="256" y="200" font-family="system-ui" font-size="120" font-weight="bold" fill="#58a6ff" text-anchor="middle">🧱</text>
+  <text x="256" y="320" font-family="system-ui" font-size="48" font-weight="600" fill="#e6edf3" text-anchor="middle">BRICK</text>
+  <text x="256" y="370" font-family="system-ui" font-size="36" font-weight="300" fill="#8b949e" text-anchor="middle">Studio</text>
+  <rect x="80" y="400" width="352" height="4" rx="2" fill="#238636"/>
+</svg>

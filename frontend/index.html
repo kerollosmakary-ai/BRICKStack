@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRICKStack Studio</title>
+<meta name="theme-color" content="#161b22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+</head>
+<body>
+
+<!-- ☰ Sidebar -->
+<div id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+    <span>📁 Workspace</span>
+    <button onclick="toggleSidebar()" class="icon-btn">&times;</button>
+  </div>
+  <div id="file-tree" class="file-tree">
+    <div class="tree-item folder">📁 project/</div>
+    <div class="tree-item file" style="padding-left:24px">📄 main.py</div>
+    <div class="tree-item file" style="padding-left:24px">📄 requirements.txt</div>
+    <div class="tree-item folder">📁 src/</div>
+    <div class="tree-item file" style="padding-left:24px">📄 app.js</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Top bar -->
+  <div id="topbar">
+    <button onclick="toggleSidebar()" class="icon-btn">☰</button>
+    <span id="status-badge" class="badge badge-ready">🟢 Ready</span>
+    <span id="session-id">Session: abc123</span>
+    <button onclick="showThoughts=!showThoughts;renderThoughts()" class="btn-sm">🧠 Thoughts</button>
+  </div>
+
+  <!-- Chat area -->
+  <div id="chat" class="chat"></div>
+
+  <!-- Composer -->
+  <div id="composer">
+    <div id="toolbar" class="toolbar">
+      <button onclick="wrapSelection('**')" title="Bold"><b>B</b></button>
+      <button onclick="wrapSelection('`','`')" title="Code">`</button>
+      <button onclick="wrapSelection('```\n','\n```')" title="Code block">{ }</button>
+      <span class="sep"></span>
+      <button onclick="insertAtCursor('- ')" title="List">☰</button>
+      <button onclick="insertAtCursor('# ')" title="Heading">H</button>
+      <span class="sep"></span>
+      <span id="agent-indicator">🧠 Architect · Coder · Terminal</span>
+    </div>
+    <div id="input-row">
+      <textarea id="input" rows="3" placeholder="Ask anything... (Shift+Enter = send)"></textarea>
+      <button id="send-btn" onclick="sendMessage()">▶</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

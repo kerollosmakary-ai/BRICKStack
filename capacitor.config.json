@@ -1,0 +1,16 @@
+{
+  "appId": "com.brickstack.studio",
+  "appName": "BRICKStack Studio",
+  "webDir": "frontend",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0d1117"
+    }
+  }
+}
