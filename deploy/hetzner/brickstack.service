@@ -1,0 +1,44 @@
+[Unit]
+Description=BRICKStack Hetzner Optimized
+After=network.target
+
+[Service]
+Type=exec
+User=brickstack
+Group=brickstack
+WorkingDirectory=/var/www/brickstack
+Environment=PATH=/var/www/brickstack/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/var/www/brickstack
+Environment=LLM_MODEL=deepseek
+Environment=API_HOST=127.0.0.1
+Environment=API_PORT=8000
+Environment=WORKERS=1
+EnvironmentFile=-/var/www/brickstack/.env
+
+# Gunicorn with Uvicorn worker (single worker for 2GB RAM)
+ExecStart=/var/www/brickstack/venv/bin/gunicorn \
+    backend.main_hetzner:app \
+    -w 1 \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --keep-alive 2 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info
+
+# Restart on failure
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60s
+StartLimitBurst=3
+
+# Resource limits (for 2GB VPS)
+LimitNOFILE=4096
+MemoryMax=512M
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target

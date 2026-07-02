@@ -1,0 +1,18 @@
+# BRICKStack Hetzner — Minimal Dependencies
+# Optimized for 2GB RAM VPS
+
+# Core
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+httpx>=0.25.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+
+# LLM (LiteLLM client, self-contained)
+# No external litellm library needed — pure httpx in llm_client.py
+
+# Production Server
+gunicorn>=21.2.0
+
+# Utilities
+tenacity>=8.2.0

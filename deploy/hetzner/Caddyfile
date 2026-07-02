@@ -1,0 +1,72 @@
+# BRICKStack Hetzner Caddyfile
+# Optimized for low-resource VPS (1-2 vCPU, 2-4GB RAM)
+# Caddy handles: HTTPS, reverse proxy, static files, compression
+# Replaces Nginx (lighter, auto-HTTPS, simpler config)
+
+{
+    auto_https off
+    # For production with domain, remove "auto_https off" and use:
+    # auto_https force_redirect
+}
+
+:80 {
+    # Enable gzip compression
+    encode gzip
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    # API routes → FastAPI backend
+    handle_path /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    # WebSocket → FastAPI backend
+    handle_path /ws {
+        reverse_proxy localhost:8000
+    }
+
+    # Health check → FastAPI backend
+    handle_path /health {
+        reverse_proxy localhost:8000
+    }
+
+    # Static files → serve directly (bypass Python)
+    handle_path /static/* {
+        root * /var/www/brickstack/frontend
+        file_server
+    }
+
+    # Everything else → frontend SPA
+    handle {
+        root * /var/www/brickstack/frontend
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Logging (rotate to prevent disk fill)
+    log {
+        output file /var/log/brickstack/access.log {
+            roll_size 10MB
+            roll_keep 5
+            roll_keep_for 168h
+        }
+    }
+}
+
+# With domain (uncomment and edit):
+# your-domain.com {
+#     encode gzip
+#     reverse_proxy /api/* localhost:8000
+#     reverse_proxy /ws localhost:8000
+#     reverse_proxy /health localhost:8000
+#     root * /var/www/brickstack/frontend
+#     try_files {path} /index.html
+#     file_server
+#     tls your-email@example.com
+# }
