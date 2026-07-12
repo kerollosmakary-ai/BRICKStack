@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  terminal-agent:
+    build:
+      context: ./terminal-agent
+      dockerfile: Dockerfile
+    ports:
+      - "4100:4100"
+    environment:
+      - PORT=4100
+      - BACKEND_URL=http://backend:8000
+      - VPS_HOST=http://orchestrator:5000
+    volumes:
+      - terminal_data:/app/data
+    networks:
+      - brickstack
+    restart: unless-stopped
+
+volumes:
+  terminal_data:
+networks:
+  brickstack:
+    external: true

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brick — Server Agent</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: #1a1a2e;
+    --text: #e0e0e0;
+    --text-dim: #666;
+    --r: #ff0040;
+    --o: #ff8000;
+    --y: #ffe600;
+    --g: #00ff40;
+    --b: #0088ff;
+    --i: #6600ff;
+    --v: #cc00ff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .rainbow-bar {
+    height: 4px;
+    width: 100%;
+    max-width: 800px;
+    background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--i), var(--v));
+    border-radius: 2px;
+    margin-bottom: 2rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 800px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--r), var(--o), var(--y), var(--g), var(--b), var(--i), var(--v));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+    letter-spacing: 0.1em;
+  }
+
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot.online { background: var(--g); box-shadow: 0 0 8px var(--g); }
+  .dot.offline { background: var(--r); box-shadow: 0 0 8px var(--r); }
+  .dot.busy { background: var(--y); box-shadow: 0 0 8px var(--y); }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .stat {
+    background: rgba(255,255,255,0.03);
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  .stat-label {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+  }
+
+  .section-title {
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  .project-list {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .project-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .project-name {
+    font-weight: 700;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .badge.concept { border-color: var(--b); color: var(--b); }
+  .badge.locked { border-color: var(--g); color: var(--g); }
+  .badge.building { border-color: var(--y); color: var(--y); }
+
+  .terminal-input {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .terminal-input input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+  }
+
+  .terminal-input input:focus {
+    border-color: var(--b);
+    box-shadow: 0 0 12px rgba(0, 136, 255, 0.2);
+  }
+
+  .terminal-input button {
+    background: linear-gradient(135deg, var(--r), var(--v));
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .terminal-input button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(255, 0, 64, 0.3);
+  }
+
+  .log-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .log-area .time { color: var(--text-dim); }
+  .log-area .info { color: var(--b); }
+  .log-area .ok { color: var(--g); }
+  .log-area .err { color: var(--r); }
+
+  .footer {
+    margin-top: 2rem;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    text-align: center;
+  }
+
+  @media (max-width: 600px) {
+    .status-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="rainbow-bar"></div>
+    <h1>BRICK</h1>
+    <div class="subtitle">SERVER AGENT · HEAD 2</div>
+
+    <div class="status-card">
+      <div class="status-header">
+        <span class="dot online" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+      <div class="status-grid">
+        <div class="stat">
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value" id="uptime">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Projects</div>
+          <div class="stat-value" id="projectCount">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Memory</div>
+          <div class="stat-value" id="memory">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Version</div>
+          <div class="stat-value" id="version">v1.0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Projects</div>
+    <div class="project-list" id="projectList">
+      <div style="color:var(--text-dim);font-size:0.8rem;">Loading...</div>
+    </div>
+
+    <div class="terminal-input">
+      <input type="text" id="commandInput" placeholder="Command: concept, lock, build, status" />
+      <button onclick="sendCommand()">RUN</button>
+    </div>
+
+    <div class="section-title">Log</div>
+    <div class="log-area" id="logArea">
+      <div><span class="time">[--:--:--]</span> <span class="info">System ready. Send a command.</span></div>
+    </div>
+
+    <div class="footer">
+      BRICK · 3-HEAD PRODUCT · TERMINAL · SERVER · TELEGRAM
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+
+    function log(type, msg) {
+      const area = document.getElementById('logArea');
+      const ts = new Date().toTimeString().slice(0, 8);
+      const cls = type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'info';
+      area.innerHTML += `<div><span class="time">[${ts}]</span> <span class="${cls}">${msg}</span></div>`;
+      area.scrollTop = area.scrollHeight;
+    }
+
+    async function fetchAPI(path, method = 'GET', body = null) {
+      const opts = { method, headers: {} };
+      if (body) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      const resp = await fetch(`${API}${path}`, opts);
+      return resp.json();
+    }
+
+    async function updateStatus() {
+      try {
+        const data = await fetchAPI('/status');
+        document.getElementById('statusDot').className = 'dot online';
+        document.getElementById('statusText').textContent = '● Online';
+        document.getElementById('uptime').textContent =
+          Math.floor(data.uptime / 3600) + 'h ' + Math.floor((data.uptime % 3600) / 60) + 'm';
+        document.getElementById('projectCount').textContent = data.projects?.length || 0;
+        document.getElementById('memory').textContent =
+          (data.memory?.heapUsed / 1048576).toFixed(1) + ' MB';
+      } catch (e) {
+        document.getElementById('statusDot').className = 'dot offline';
+        document.getElementById('statusText').textContent = '● Offline';
+      }
+    }
+
+    async function updateProjects() {
+      try {
+        const data = await fetchAPI('/projects');
+        const list = document.getElementById('projectList');
+        if (!data.projects || data.projects.length === 0) {
+          list.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;">No projects yet. Create one with "concept" command.</div>';
+          return;
+        }
+        list.innerHTML = data.projects.map(p =>
+          `<div class="project-item">
+            <span class="project-name">${p.name}</span>
+            <span class="badge ${p.stage}">${p.stage}</span>
+          </div>`
+        ).join('');
+      } catch {}
+    }
+
+    async function sendCommand() {
+      const input = document.getElementById('commandInput');
+      const cmd = input.value.trim();
+      if (!cmd) return;
+      input.value = '';
+
+      const parts = cmd.split(' ');
+      const action = parts[0].toLowerCase();
+      const name = parts.slice(1).join(' ');
+
+      log('info', `→ ${cmd}`);
+
+      try {
+        let data;
+        switch (action) {
+          case 'status':
+            await updateStatus();
+            log('ok', 'Status refreshed');
+            return;
+
+          case 'concept':
+            data = await fetchAPI('/concept', 'POST', {
+              name: name || 'untitled-' + Date.now(),
+              purpose: 'Web project',
+              audience: 'General',
+              vibe: 'Modern'
+            });
+            if (data.success) log('ok', `Concept "${data.project.name}" created`);
+            else log('err', data.error || 'Failed');
+            break;
+
+          case 'lock':
+            data = await fetchAPI('/lock', 'POST', {
+              name: name || 'untitled',
+              shape: 'rounded',
+              palette: 'spectrum-dark',
+              fontSize: 15,
+              goal: 'Build project'
+            });
+            if (data.success) log('ok', `Design locked for "${data.lock.project}"`);
+            else log('err', data.error || 'Failed');
+            break;
+
+          case 'build':
+            data = await fetchAPI('/build', 'POST', { name: name || 'untitled' });
+            if (data.success) {
+              log('ok', `Build complete: ${data.build.project}`);
+              log('info', `VPS plan: ${data.build.vpsPlan?.planId || 'none'}`);
+            } else log('err', data.error || 'Failed');
+            break;
+
+          default:
+            log('err', `Unknown command: ${action}`);
+            log('info', 'Try: concept <name>, lock <name>, build <name>, status');
+        }
+
+        await updateProjects();
+      } catch (e) {
+        log('err', `Error: ${e.message}`);
+      }
+    }
+
+    // Allow Enter key to submit
+    document.getElementById('commandInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendCommand();
+    });
+
+    // Auto refresh
+    updateStatus();
+    updateProjects();
+    setInterval(updateStatus, 15000);
+  </script>
+</body>
+</html>

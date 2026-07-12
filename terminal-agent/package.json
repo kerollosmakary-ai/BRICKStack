@@ -1,0 +1,15 @@
+{
+  "name": "brick-agent",
+  "version": "1.0.0",
+  "description": "3-Head Product: Terminal Agent + Server Agent + Telegram Agent",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "server": "node server.js",
+    "telegram": "node telegram.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
